@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-git - GitHub 项目管理工具</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <span class="header-logo">e-git</span>
+            <button class="back-btn" id="backBtn" onclick="showPage('home')">← 返回</button>
+        </div>
+        <div class="header-right">
+            <span class="account-info" id="accountInfo">未绑定</span>
+            <button class="btn-bind" id="btnBind">绑定账号</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+
+        <!-- ==================== 首页 ==================== -->
+        <div class="page active" id="page-home">
+            <div class="welcome-title">欢迎使用 e-git</div>
+            <div class="welcome-sub">便携式 GitHub 项目管理工具，随时随地管理你的代码仓库</div>
+            <div class="menu-grid">
+                <div class="menu-card" id="menu-repos">
+                    <div class="icon">📁</div>
+                    <h3>我的仓库</h3>
+                    <p>查看、创建、删除 GitHub 仓库</p>
+                </div>
+                <div class="menu-card" id="menu-upload" onclick="openUploadModal()">
+                    <div class="icon">📤</div>
+                    <h3>上传项目</h3>
+                    <p>拖拽文件/文件夹上传到指定仓库</p>
+                </div>
+                <div class="menu-card" id="menu-branches">
+                    <div class="icon">🌿</div>
+                    <h3>我的分支</h3>
+                    <p>创建、删除、合并分支</p>
+                </div>
+                <div class="menu-card" id="menu-versions">
+                    <div class="icon">📋</div>
+                    <h3>我的版本</h3>
+                    <p>查看仓库提交记录与变更历史</p>
+                </div>
+                <div class="menu-card" id="menu-pull">
+                    <div class="icon">📥</div>
+                    <h3>下拉项目</h3>
+                    <p>从 Git 地址克隆项目到本地</p>
+                </div>
+                <div class="menu-card" id="menu-settings">
+                    <div class="icon">⚙️</div>
+                    <h3>设置</h3>
+                    <p>使用教程与作者信息</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 我的仓库 ==================== -->
+        <div class="page" id="page-repos">
+            <div class="toolbar">
+                <div class="toolbar-left">我的仓库</div>
+                <div class="toolbar-right">
+                    <button class="btn" id="btnRefreshRepos">🔄 刷新</button>
+                    <button class="btn btn-primary" id="btnCreateRepo">+ 新建仓库</button>
+                </div>
+            </div>
+            <div class="repo-list" id="repoList">
+                <div class="empty-state"><div class="icon">📭</div><p>加载中...</p></div>
+            </div>
+        </div>
+
+        <!-- ==================== 上传项目 ==================== -->
+        <div class="page" id="page-upload">
+            <div class="toolbar">
+                <div class="toolbar-left">上传项目</div>
+            </div>
+            <div class="empty-state">
+                <div class="icon">📤</div>
+                <p>请点击菜单中的"上传项目"开始上传</p>
+                <button class="btn btn-primary" style="margin-top:16px;" onclick="openUploadModal()">打开上传窗口</button>
+            </div>
+        </div>
+
+        <!-- ==================== 我的分支 ==================== -->
+        <div class="page" id="page-branches">
+            <div class="toolbar">
+                <div class="toolbar-left">我的分支</div>
+                <div class="toolbar-right">
+                    <input type="text" id="branchGraphRepoName" placeholder="请输入仓库名" style="width:180px;padding:7px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:13px;">
+                    <button class="btn btn-primary" id="btnLoadBranchGraph">🔄 加载</button>
+                    <button class="btn btn-primary" id="btnCreateBranchAction">+ 创建分支</button>
+                    <button class="btn btn-danger" id="btnDeleteBranchAction">删除分支</button>
+                    <button class="btn" id="btnMergeBranchAction">合并分支</button>
+                </div>
+            </div>
+            <div class="branch-graph-container" id="branchGraphContainer">
+                <div class="empty-state"><div class="icon">🌿</div><p>输入仓库名后点击"加载"查看分支图谱</p></div>
+            </div>
+        </div>
+
+        <!-- ==================== 我的版本 ==================== -->
+        <div class="page" id="page-versions">
+            <div class="toolbar">
+                <div class="toolbar-left">我的版本</div>
+            </div>
+            <div class="form-group" style="max-width:520px;margin-bottom:16px;">
+                <label>仓库名</label>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="versionRepoName" placeholder="请输入仓库名" style="flex:1;">
+                    <button class="btn btn-primary" id="btnLoadVersions">查询</button>
+                    <button class="btn btn-danger" id="btnRollback" style="display:none;" disabled>⏪ 回滚</button>
+                    <button class="btn" id="btnRestore" style="display:none;" disabled>还原</button>
+                </div>
+            </div>
+            <div id="rollbackInfoBar" style="display:none;background:#fcf4d9;border:1px solid #f8e3a0;border-radius:6px;padding:8px 14px;margin-bottom:12px;font-size:13px;color:#9a6700;"></div>
+            <div class="version-list" id="versionList">
+                <div class="empty-state"><p>输入仓库名后查询提交记录</p></div>
+            </div>
+        </div>
+
+        <!-- ==================== 下拉项目 ==================== -->
+        <div class="page" id="page-pull">
+            <div class="toolbar">
+                <div class="toolbar-left">下拉项目</div>
+            </div>
+            <div class="form-group">
+                <label>Git 地址</label>
+                <input type="text" id="pullGitUrlPage" placeholder="https://github.com/user/repo.git">
+            </div>
+            <div class="form-group">
+                <label>代理地址（可选）</label>
+                <input type="text" id="pullProxyPage" placeholder="http://127.0.0.1:7890">
+            </div>
+            <div class="form-group">
+                <label>输出目录</label>
+                <input type="text" id="pullOutputDirPage" placeholder="D:\projects">
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn btn-primary" onclick="submitClonePage()">Git Clone 下拉</button>
+                <button class="btn" onclick="submitDownloadZipPage()">下载 ZIP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 设置 ==================== -->
+    <div class="page" id="page-settings">
+        <div class="settings-container">
+            <h2 class="settings-page-heading">⚙️ 设置</h2>
+            <div class="settings-card">
+                <h3>👤 作者信息</h3>
+                <div class="settings-content">
+                    <p>用户您好，我是<strong>水哥</strong>，e-git 的开发者，青岛理工大学2022级的一名学生。</p>
+                    <p>e-git 为面向中文用户的本地 GitHub 管理面板，请在使用前配置代理网址或 VPN，注册 GitHub 账号，并从 GitHub 获取个人 Token 并绑定，才能使用。</p>
+                    <p>如有问题，请电话或微信联系作者：<strong>18563982192</strong>，作者感激不尽，欢迎各位大佬指正。</p>
+                </div>
+            </div>
+            <div class="settings-card">
+                <h3>🌐 代理与 VPN 配置</h3>
+                <div class="settings-content">
+                    <div class="tutorial-section">
+                        <h4>Clash Verge 代理工具（推荐）</h4>
+                        <p>支持 Windows / macOS / Linux，图形化界面，配置简单。</p>
+                        <p>下载地址：<a href="https://clash.top/clash-verge-rev/" target="_blank">https://clash.top/clash-verge-rev/</a></p>
+                    </div>
+                    <div class="tutorial-section">
+                        <h4>代理节点订阅平台</h4>
+                        <p>以下平台提供机场订阅节点，复制订阅链接导入 Clash Verge 即可使用：</p>
+                        <dl>
+                            <dt>稳联云</dt>
+                            <dd><a href="https://fn06.sp0303.xyz/#/login" target="_blank">https://fn06.sp0303.xyz/#/login</a></dd>
+                            <dt>飞鸟云</dt>
+                            <dd><a href="https://03.170809.xyz/#/register?code=Yu4xN5bt" target="_blank">https://03.170809.xyz/#/register?code=Yu4xN5bt</a></dd>
+                            <dt>穿墙猫</dt>
+                            <dd><a href="https://b.cqm.baby/?_gv=mpbp0s3s#/login" target="_blank">https://b.cqm.baby/?_gv=mpbp0s3s#/login</a></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-card">
+                <h3>📖 使用教程</h3>
+                <div class="settings-content">
+                    <div class="tutorial-section">
+                        <h4>基础概念</h4>
+                        <dl>
+                            <dt>仓库（Repository）</dt>
+                            <dd>代码的存储空间，包含项目的所有文件、文件夹和修改历史。每个仓库对应一个独立的项目。</dd>
+                            <dt>主支（Main Branch）</dt>
+                            <dd>仓库的默认分支，通常是项目的主线版本，如 <code>main</code> 或 <code>master</code>。</dd>
+                            <dt>分支（Branch）</dt>
+                            <dd>从主支分叉出来的独立开发线。可以在分支上修改代码而不影响主线，完成后可合并回去。</dd>
+                            <dt>节点（Commit）</dt>
+                            <dd>每次提交代码产生的记录，包含修改内容、作者、时间等信息。多个节点串联形成提交历史。</dd>
+                            <dt>提交（Commit）</dt>
+                            <dd>将修改保存到仓库的操作。一次提交可以包含多个文件的变更，是版本控制的核心操作。</dd>
+                            <dt>克隆（Clone）</dt>
+                            <dd>将远程仓库完整复制到本地的操作，获取所有文件和历史记录。</dd>
+                            <dt>回滚（Rollback）</dt>
+                            <dd>将分支指针退回到之前的某个提交节点，撤销后续的所有提交。回滚不会删除提交记录，只是让分支指向更早的状态。</dd>
+                            <dt>还原（Restore）</dt>
+                            <dd>撤销回滚操作，将分支恢复到回滚前的状态。回滚+还原可以来回切换版本。</dd>
+                        </dl>
+                    </div>
+                    <div class="tutorial-section">
+                        <h4>如何绑定 GitHub 账号</h4>
+                        <ol>
+                            <li>打开 <a href="https://github.com" target="_blank">GitHub 官网</a>，注册或登录你的账号。</li>
+                            <li>点击右上角头像 → <strong>Settings</strong> → 左侧菜单 <strong>Developer settings</strong> → <strong>Personal access tokens</strong> → <strong>Tokens (classic)</strong>。</li>
+                            <li>点击 <strong>Generate new token (classic)</strong>。</li>
+                            <li>在 <strong>Note</strong> 中输入描述（如 "e-git"），设置过期时间。</li>
+                            <li>勾选以下权限：
+                                <ul>
+                                    <li><code>repo</code>（仓库完全控制权）</li>
+                                    <li><code>user</code> → <code>read:user</code>（读取用户信息）</li>
+                                    <li><code>delete_repo</code>（删除仓库权限，如需删除功能）</li>
+                                </ul>
+                            </li>
+                            <li>点击页面底部的 <strong>Generate token</strong>，复制生成的 Token（只显示一次，请妥善保存）。</li>
+                            <li>回到 e-git，点击右上角 <strong>绑定账号</strong>，输入 GitHub 用户名、邮箱和刚复制的 Token，确认绑定。</li>
+                            <li>绑定成功后，右上角会显示"已绑定：你的用户名"，即可开始使用所有功能。</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 绑定账号弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-bind">
+        <div class="modal">
+            <h3>绑定 GitHub 账号</h3>
+            <div class="form-group">
+                <label>GitHub 用户名</label>
+                <input type="text" id="bindUsername" placeholder="请输入 GitHub 用户名">
+            </div>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" id="bindEmail" placeholder="请输入 GitHub 邮箱">
+            </div>
+            <div class="form-group">
+                <label>Personal Access Token</label>
+                <input type="password" id="bindToken" placeholder="请输入 GitHub Token">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeBindModal">取消</button>
+                <button class="btn btn-primary" id="submitBind">确认绑定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 换绑账号弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-rebind">
+        <div class="modal">
+            <h3>换绑 GitHub 账号</h3>
+            <div class="form-group">
+                <label>新 GitHub 用户名</label>
+                <input type="text" id="rebindUsername" placeholder="请输入新的 GitHub 用户名">
+            </div>
+            <div class="form-group">
+                <label>新邮箱</label>
+                <input type="email" id="rebindEmail" placeholder="请输入新的 GitHub 邮箱">
+            </div>
+            <div class="form-group">
+                <label>新 Personal Access Token</label>
+                <input type="password" id="rebindToken" placeholder="请输入新的 GitHub Token">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeRebindModal">取消</button>
+                <button class="btn btn-primary" id="submitRebind">确认换绑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 新建仓库弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-create-repo">
+        <div class="modal">
+            <h3>新建仓库</h3>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="newRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-group">
+                <label>仓库描述</label>
+                <textarea id="newRepoDesc" placeholder="请输入仓库描述"></textarea>
+            </div>
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="newRepoPrivate"> 私有仓库
+                </label>
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeCreateRepo">取消</button>
+                <button class="btn btn-primary" id="submitCreateRepo">确认创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 删除仓库弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-delete-repo">
+        <div class="modal">
+            <h3>删除仓库</h3>
+            <p style="color:#cf222e;font-size:13px;margin-bottom:14px;">此操作不可撤销，将删除 GitHub 上的仓库</p>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="deleteRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeDeleteRepo">取消</button>
+                <button class="btn btn-danger" id="submitDeleteRepo">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 上传项目弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-upload">
+        <div class="modal" style="width:560px;">
+            <h3>上传项目</h3>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="uploadRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-group">
+                <label>分支</label>
+                <input type="text" id="uploadBranch" placeholder="默认 main" value="main">
+            </div>
+            <div class="form-group">
+                <label>提交信息</label>
+                <input type="text" id="uploadCommitMsg" placeholder="Upload via e-git">
+            </div>
+            <div class="upload-zone" id="uploadZone">
+                <div class="icon">📂</div>
+                <p>点击或拖拽文件/文件夹到此处</p>
+                <input type="file" id="fileInput" multiple style="display:none;">
+            </div>
+            <div class="file-list" id="uploadFileList"></div>
+            <div class="progress-bar-wrap" id="uploadProgress">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+                <span class="progress-text" id="progressText">0%</span>
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeUploadModal">关闭</button>
+                <button class="btn btn-primary" id="submitUpload">确认上传</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 创建分支弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-branch-create">
+        <div class="modal">
+            <h3>创建分支</h3>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="branchRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-group">
+                <label>新分支名</label>
+                <input type="text" id="newBranchName" placeholder="请输入新分支名">
+            </div>
+            <div class="form-group">
+                <label>源分支（从哪个分支创建）</label>
+                <input type="text" id="branchSource" placeholder="默认 main" value="main">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeBranchCreateModal">取消</button>
+                <button class="btn btn-primary" id="submitBranchCreate">确认创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 删除分支弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-branch-delete">
+        <div class="modal">
+            <h3>删除分支</h3>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="branchDelRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-group">
+                <label>要删除的分支名</label>
+                <input type="text" id="branchDelName" placeholder="请输入分支名">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeBranchDeleteModal">取消</button>
+                <button class="btn btn-danger" id="submitBranchDelete">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 合并分支弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-branch-merge">
+        <div class="modal">
+            <h3>合并分支</h3>
+            <div class="form-group">
+                <label>仓库名</label>
+                <input type="text" id="mergeRepoName" placeholder="请输入仓库名">
+            </div>
+            <div class="form-group">
+                <label>目标分支（合并到哪个分支）</label>
+                <input type="text" id="mergeBaseBranch" placeholder="如 main">
+            </div>
+            <div class="form-group">
+                <label>当前分支（从哪个分支合并）</label>
+                <input type="text" id="mergeHeadBranch" placeholder="如 dev">
+            </div>
+            <div class="form-actions">
+                <button class="btn" id="closeBranchMergeModal">取消</button>
+                <button class="btn btn-primary" id="submitBranchMerge">确认合并</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 提交详情弹窗 ==================== -->
+    <div class="modal-overlay" id="modal-commit-detail">
+        <div class="modal" style="width:720px;max-height:90vh;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin-bottom:0;">提交详情</h3>
+                <button class="btn" id="closeCommitDetailModal">✕ 关闭</button>
+            </div>
+            <div id="commitDetailContent">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
